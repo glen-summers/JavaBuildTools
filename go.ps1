@@ -41,10 +41,15 @@ function Main
 		{
 			Build
 		}
+		
+		'shell'
+		{
+			Shell
+		}
 
 		default
 		{
-			'Syntax: build|clean|nuke'
+			'Syntax: build|shell|clean|nuke'
 		}
 	}
 }
@@ -57,6 +62,13 @@ function Build
 	$Env:Path="$JdkDir\bin;$Env:Path"
 	javac HelloWorld.java
 	java HelloWorld
+}
+
+function Shell
+{
+	GetJdk
+	$Env:Path="$JdkDir\bin;$Env:Path"
+	JShell
 }
 
 ###########################################################################
