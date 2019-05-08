@@ -56,9 +56,14 @@ function Main
 			Shell
 		}
 		
+		'gen'
+		{
+			GenerateGradleApp
+		}
+		
 		'gradle'
 		{
-			Gradle
+			BuildGradleApp
 		}
 
 		default
@@ -78,7 +83,7 @@ function Build
 	java HelloWorld
 }
 
-function Gradle
+function GenerateGradleApp
 {
 	GetJdk
 	GetGradle
@@ -87,14 +92,36 @@ function Gradle
 	gradle.bat --stop
 	#gradle.bat help --task :init
 	
-	$GradleAppDir="$Temp\gradleSource"
+	$GradleAppDir="$PSScriptRoot\gradleSource"
 	Delete-Tree $GradleAppDir
 	
 	md $GradleAppDir -Force | Out-Null
 	pushd $GradleAppDir
+		gradle.bat init --type basic --dsl groovy --project-name root
+	popd
+	
+	md $GradleAppDir\app -Force | Out-Null
+	pushd $GradleAppDir\app
 	gradle.bat init --type java-application --dsl groovy --test-framework junit --project-name Project1 --package Project1
-	.\gradlew.bat run
+	popd
+	
+	md $GradleAppDir\lib -Force | Out-Null
+	pushd $GradleAppDir\lib
+	gradle.bat init --type java-library --dsl groovy --test-framework junit --project-name Library1 --package Library1
+	popd
+	
+	#.\gradlew.bat run
 	gradle.bat --stop
+}
+
+function BuildGradleApp
+{
+	GetJdk
+	GetGradle
+	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
+	$GradleAppDir="$PSScriptRoot\gradleSource"
+	pushd $GradleAppDir
+	.\gradlew.bat run
 	popd
 }
 
