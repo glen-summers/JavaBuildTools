@@ -5,26 +5,34 @@ $Downloads = "$temp\downloads"
 $DepDir='ExternalDependencies'
 
 $WGetVer='1.20.3'
-$WGetUrl="https://eternallybored.org/misc/wget/$WGetVer/64/wget.exe"
+$WGetUrl="https://eternallybored.org/misc/wget/${WGetVer}/64/wget.exe"
 $WGet="$Downloads\wget.exe"
 
 $NugetVer='v4.9.4'
-$NugetUrl="https://dist.nuget.org/win-x86-commandline/$NugetVer/nuget.exe"
+$NugetUrl="https://dist.nuget.org/win-x86-commandline/${NugetVer}/nuget.exe"
 $Nuget="$Downloads\nuget.exe"
 
 $SevenZipVer='18.1.0'
-$SevenZip="$Downloads\7-Zip.CommandLine.$SevenZipVer\tools\x64\7za.exe"
+$SevenZip="$Downloads\7-Zip.CommandLine.${SevenZipVer}\tools\x64\7za.exe"
 
 $JdkVer='12.0.1'
 $JdkFlavour='windows-x64'
-$JdkZip="$Downloads\jdk-${JdkVer}_${JdkFlavour}.bin.zip"
-$JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+12/69cfe15208a647278a19ef0990eea691/jdk-${JdkVer}_${JdkFlavour}_bin.zip"
+$JdkStem="jdk-${JdkVer}"
+$JdkZip="$Downloads\${JdkStem}_${JdkFlavour}.bin.zip"
+$JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+12/69cfe15208a647278a19ef0990eea691/${JdkStem}_${JdkFlavour}_bin.zip"
+
+$GradleVer='5.4.1'
+$GradleStem="gradle-${GradleVer}"
+$GradleUrl="https://services.gradle.org/distributions/${GradleStem}-bin.zip"
+$GradleZip="$Downloads\${GradleStem}-bin.zip"
 
 function Main
 {
 	cls
-	$JdkDir = Join-Path (Get-DirectoryAbove $PSScriptRoot $DepDir $Temp) jdk-$JdkVer
-
+	$Above = Get-DirectoryAbove $PSScriptRoot $DepDir $Temp
+	$JdkDir = Join-Path $Above $JdkStem
+	$GradleDir = Join-Path $Above $GradleStem
+	
 	Switch ($Target)
 	{
 		'clean'
@@ -35,6 +43,7 @@ function Main
 		'nuke'
 		{
 			Delete-Tree $JdkDir
+			Delete-Tree $GradleDir
 		}
 
 		'build'
@@ -46,10 +55,15 @@ function Main
 		{
 			Shell
 		}
+		
+		'gradle'
+		{
+			Gradle
+		}
 
 		default
 		{
-			'Syntax: build|shell|clean|nuke'
+			'Syntax: build|gradle|shell|clean|nuke'
 		}
 	}
 }
@@ -62,6 +76,26 @@ function Build
 	$Env:Path="$JdkDir\bin;$Env:Path"
 	javac HelloWorld.java
 	java HelloWorld
+}
+
+function Gradle
+{
+	GetJdk
+	GetGradle
+	
+	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
+	gradle.bat --stop
+	#gradle.bat help --task :init
+	
+	$GradleAppDir="$Temp\gradleSource"
+	Delete-Tree $GradleAppDir
+	
+	md $GradleAppDir -Force | Out-Null
+	pushd $GradleAppDir
+	gradle.bat init --type java-application --dsl groovy --test-framework junit --project-name Project1 --package Project1
+	.\gradlew.bat run
+	gradle.bat --stop
+	popd
 }
 
 function Shell
@@ -83,9 +117,26 @@ function GetJdk
 
 		Download-File $WGetUrl $WGet
 		Download-File-WGet $JdkUrl $JdkZip 'oraclelicense=accept-securebackup-cookie'
-		ExtractZip $JdkZip ${Temp}\jdk-$JdkVer
-		move ${Temp}\jdk-$JdkVer\jdk-$JdkVer $JdkDir
-		rm ${Temp}\jdk-$JdkVer
+		ExtractZip $JdkZip $Temp\$JdkStem
+		move $Temp\$JdkStem\$JdkStem $JdkDir
+		rm $Temp\$JdkStem
+	}
+}
+
+function GetGradle
+{
+	if (! (Test-Path $GradleDir))
+	{
+		md $Downloads -Force | Out-Null
+		Download-File $NugetUrl $Nuget
+		Download-Nuget $SevenZip $SevenZipVer
+
+		Download-File $WGetUrl $WGet
+		Download-File-WGet $GradleUrl $GradleZip
+		
+		ExtractZip $GradleZip $Temp\$GradleStem
+		move $Temp\$GradleStem\$GradleStem $GradleDir
+		rm $Temp\$GradleStem
 	}
 }
 
