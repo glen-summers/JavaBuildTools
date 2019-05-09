@@ -35,6 +35,36 @@ function Main
 	
 	Switch ($Target)
 	{
+		'build'
+		{
+			Build
+		}
+
+		'gradle'
+		{
+			BuildGradleApp
+		}
+		
+		'gen'
+		{
+			GenerateGradleApp
+		}
+
+		'cmd'
+		{
+			GetJdk
+			GetGradle
+			$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
+			echo "Jdk   : $JdkDir"
+			echo "Gradle: $GradleDir"
+			cmd /k PROMPT GO`$g
+		}
+
+		'jshell'
+		{
+			JShell
+		}
+		
 		'clean'
 		{
 			Delete-Tree $Temp
@@ -47,29 +77,18 @@ function Main
 			Delete-Tree $GradleDir
 		}
 
-		'build'
-		{
-			Build
-		}
-		
-		'shell'
-		{
-			Shell
-		}
-		
-		'gen'
-		{
-			GenerateGradleApp
-		}
-		
-		'gradle'
-		{
-			BuildGradleApp
-		}
 
 		default
 		{
-			'Syntax: build|gradle|shell|clean|nuke'
+			'Syntax: build|gradle|gen|cmd|jshell|clean|nuke
+				build : compile basic java test project
+				gradle: compile and run gradle test project
+				gen   : generate prototype gradle app
+				cmd   : oprn gradle command prompt				
+				jshell: run jshell
+				clean : remove all temp files
+				nuke  : remove jdk\gradle generated directories
+				'
 		}
 	}
 }
@@ -126,11 +145,11 @@ function BuildGradleApp
 	popd
 }
 
-function Shell
+function JShell
 {
 	GetJdk
 	$Env:Path="$JdkDir\bin;$Env:Path"
-	JShell
+	JShell.exe
 }
 
 ###########################################################################
