@@ -55,9 +55,7 @@ function Main
 			GetJdk
 			GetGradle
 			$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
-			echo "Jdk   : $JdkDir"
-			echo "Gradle: $GradleDir"
-			cmd /k PROMPT GO`$g
+			cmd /k PROMPT [$`p] GO`$g
 		}
 
 		'jshell'
@@ -77,18 +75,17 @@ function Main
 			Delete-Tree $GradleDir
 		}
 
-
 		default
 		{
 			'Syntax: build|gradle|gen|cmd|jshell|clean|nuke
-				build : compile basic java test project
-				gradle: compile and run gradle test project
-				gen   : generate prototype gradle app
-				cmd   : oprn gradle command prompt				
-				jshell: run jshell
-				clean : remove all temp files
-				nuke  : remove jdk\gradle generated directories
-				'
+  build : compile basic java test project
+  gradle: compile and run gradle test project
+  gen   : generate prototype gradle app
+  cmd   : oprn gradle command prompt				
+  jshell: run jshell
+  clean : remove all temp files
+  nuke  : remove jdk\gradle generated directories
+'
 		}
 	}
 }
@@ -99,8 +96,10 @@ function Build
 {
 	GetJdk
 	$Env:Path="$JdkDir\bin;$Env:Path"
+	pushd javaSource
 	javac HelloWorld.java
 	java HelloWorld
+	popd
 }
 
 function GenerateGradleApp
@@ -168,6 +167,7 @@ function GetJdk
 		move $Temp\$JdkStem\$JdkStem $JdkDir
 		rm $Temp\$JdkStem
 	}
+	echo "Jdk   : $JdkDir"
 }
 
 function GetGradle
@@ -185,6 +185,7 @@ function GetGradle
 		move $Temp\$GradleStem\$GradleStem $GradleDir
 		rm $Temp\$GradleStem
 	}
+	echo "Gradle: $GradleDir"
 }
 
 function Get-DirectoryAbove
