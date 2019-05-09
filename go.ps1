@@ -38,6 +38,7 @@ function Main
 		'clean'
 		{
 			Delete-Tree $Temp
+			git clean -fdx
 		}
 
 		'nuke'
