@@ -32,7 +32,7 @@ function Main
 	$Above = Get-DirectoryAbove $PSScriptRoot $DepDir $Temp
 	$JdkDir = Join-Path $Above $JdkStem
 	$GradleDir = Join-Path $Above $GradleStem
-	
+
 	Switch ($Target)
 	{
 		'build'
@@ -44,7 +44,7 @@ function Main
 		{
 			BuildGradleApp
 		}
-		
+
 		'gen'
 		{
 			GenerateGradleApp
@@ -62,7 +62,7 @@ function Main
 		{
 			JShell
 		}
-		
+
 		'clean'
 		{
 			Delete-Tree $Temp
@@ -106,29 +106,33 @@ function GenerateGradleApp
 {
 	GetJdk
 	GetGradle
-	
+
 	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
 	gradle.bat --stop
 	#gradle.bat help --task :init
-	
+
 	$GradleAppDir="$PSScriptRoot\gradleSource"
 	Delete-Tree $GradleAppDir
-	
+
 	md $GradleAppDir -Force | Out-Null
 	pushd $GradleAppDir
-		gradle.bat init --type basic --dsl groovy --project-name root
+	gradle.bat init --type basic --dsl groovy --project-name root
 	popd
-	
+
 	md $GradleAppDir\app -Force | Out-Null
 	pushd $GradleAppDir\app
 	gradle.bat init --type java-application --dsl groovy --test-framework junit --project-name Project1 --package Project1
 	popd
-	
+
 	md $GradleAppDir\lib -Force | Out-Null
 	pushd $GradleAppDir\lib
 	gradle.bat init --type java-library --dsl groovy --test-framework junit --project-name Library1 --package Library1
 	popd
-	
+
+	pushd "$PSScriptRoot\groovySource"
+	gradle.bat run
+	popd
+
 	#.\gradlew.bat run
 	gradle.bat --stop
 }
@@ -180,7 +184,7 @@ function GetGradle
 
 		Download-File $WGetUrl $WGet
 		Download-File-WGet $GradleUrl $GradleZip
-		
+
 		ExtractZip $GradleZip $Temp\$GradleStem
 		move $Temp\$GradleStem\$GradleStem $GradleDir
 		rm $Temp\$GradleStem
