@@ -112,22 +112,27 @@ function GenerateGradleApp
 	#gradle --stop
 	#gradle help --task :init
 
+	$RootProjectName='RootProject'
+	$AppName='app'
+	$AppPackageName='com.crapola'
+	$LibName='lib'
+	$LibPackageName='com.crapola'
+
 	$GradleAppDir="$PSScriptRoot\gradleSource"
 	Delete-Tree $GradleAppDir
 
 	md $GradleAppDir -Force | Out-Null
 	pushd $GradleAppDir
-	gradle init --type basic --dsl groovy --project-name root
+	gradle init --type basic --dsl groovy --project-name $RootProjectName
+
+	md $AppName -Force | Out-Null
+	pushd $AppName
+	gradle init --type java-application --dsl groovy --test-framework junit --project-name $AppName --package $AppPackageName
 	popd
 
-	md $GradleAppDir\app -Force | Out-Null
-	pushd $GradleAppDir\app
-	gradle init --type java-application --dsl groovy --test-framework junit --project-name Project1 --package Project1
-	popd
-
-	md $GradleAppDir\lib -Force | Out-Null
-	pushd $GradleAppDir\lib
-	gradle init --type java-library --dsl groovy --test-framework junit --project-name Library1 --package Library1
+	md $LibName -Force | Out-Null
+	pushd $LibName
+	gradle init --type java-library --dsl groovy --test-framework junit --project-name $LibName --package $LibPackageName
 	popd
 
 	pushd "$PSScriptRoot\groovySource"
