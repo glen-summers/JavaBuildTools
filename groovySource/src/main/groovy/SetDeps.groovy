@@ -61,4 +61,19 @@ class Parser
 }
 
 Parser.Parse("../gradleSource/app/build.gradle", "    compile project(path: ':lib')")
+
+Parser.Append("../gradleSource/app/build.gradle", "\r\n\
+test {\r\n\
+    testLogging {\r\n\
+        events 'PASSED', 'FAILED', 'SKIPPED'\r\n\
+    }\r\n\
+}")
+
+Parser.Append("../gradleSource/lib/build.gradle", "\r\n\
+test {\r\n\
+    testLogging {\r\n\
+        events 'PASSED', 'FAILED', 'SKIPPED'\r\n\
+    }\r\n\
+}")
+
 Parser.Append("../gradleSource/settings.gradle", "include 'app', 'lib'")

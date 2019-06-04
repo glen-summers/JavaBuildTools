@@ -144,7 +144,7 @@ function BuildGradleApp
 	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
 	$GradleAppDir="$PSScriptRoot\gradleSource"
 	pushd $GradleAppDir
-	.\gradlew run
+	.\gradlew cleanTest test
 	popd
 }
 

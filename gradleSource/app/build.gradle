@@ -32,3 +32,9 @@ dependencies {
 
 // Define the main class for the application
 mainClassName = 'Project1.App'
+
+test {
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+    }
+}
