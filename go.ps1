@@ -48,6 +48,7 @@ function Main
 		'gen'
 		{
 			GenerateGradleApp
+			BuildGradleApp
 		}
 
 		'cmd'
@@ -136,7 +137,7 @@ function GenerateGradleApp
 	popd
 
 	pushd "$PSScriptRoot\groovySource"
-	gradle run
+	gradle run --args="'$GradleAppDir'"
 	popd
 
 	gradle --stop

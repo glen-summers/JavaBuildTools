@@ -25,15 +25,15 @@ class Visitor extends CodeVisitorSupport
 	}
 }
 
-class Parser 
+class Parser
 {
-	public static Parse(String path, String dep)
+	public static AddDependency(String path, String dep)
 	{
-		AstBuilder builder = new AstBuilder()
-		List<ASTNode> nodes = builder.buildFromString( new String(Files.readAllBytes(Paths.get(path))) )
+		def builder = new AstBuilder()
+		def nodes = builder.buildFromString( new String(Files.readAllBytes(Paths.get(path))) )
 
-		Visitor visitor = new Visitor()
-		for (ASTNode node : nodes)
+		def visitor = new Visitor()
+		for (def node : nodes)
 		{
 			node.visit(visitor)
 		}
@@ -44,7 +44,7 @@ class Parser
 			throw new NoSuchElementException()
 		}
 
-		List<String> fileLines = Files.readAllLines(Paths.get(path))
+		def fileLines = Files.readAllLines(Paths.get(path))
 		fileLines.add(depsLastLine-1, "")
 		fileLines.add(depsLastLine, dep)
 
@@ -58,22 +58,29 @@ class Parser
 	{
 		new File(path).append value
 	}
+
+	public static SetTestLogging(def file)
+	{
+		Append(file, "\r\n\
+test {\r\n\
+    testLogging {\r\n\
+        events 'PASSED', 'FAILED', 'SKIPPED'\r\n\
+    }\r\n\
+}")
+	}
+
+	public static Main(def args)
+	{
+		def dir = args[0]
+		def appFile = "$dir/app/build.gradle"
+		def libFile = "$dir/lib/build.gradle"
+		def rootSettings = "$dir/settings.gradle"
+
+		AddDependency(appFile, "    compile project(path: ':lib')")
+		SetTestLogging(appFile)
+		SetTestLogging(libFile)
+		Append(rootSettings, "include 'app', 'lib'")
+	}
 }
 
-Parser.Parse("../gradleSource/app/build.gradle", "    compile project(path: ':lib')")
-
-Parser.Append("../gradleSource/app/build.gradle", "\r\n\
-test {\r\n\
-    testLogging {\r\n\
-        events 'PASSED', 'FAILED', 'SKIPPED'\r\n\
-    }\r\n\
-}")
-
-Parser.Append("../gradleSource/lib/build.gradle", "\r\n\
-test {\r\n\
-    testLogging {\r\n\
-        events 'PASSED', 'FAILED', 'SKIPPED'\r\n\
-    }\r\n\
-}")
-
-Parser.Append("../gradleSource/settings.gradle", "include 'app', 'lib'")
+Parser.Main(args)
