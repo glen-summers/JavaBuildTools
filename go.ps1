@@ -1,4 +1,4 @@
-param ([string] $Target)
+param ([string] $Target, [string] $TargetDir='', [string] $Package='')
 $ErrorActionPreference = "Stop"
 $Temp="$PSScriptRoot\temp"
 $Downloads = "$temp\downloads"
@@ -42,13 +42,27 @@ function Main
 
 		'gradle'
 		{
-			BuildGradleApp
+			BuildGradleApp $PSScriptRoot\gradleSource
 		}
 
 		'gen'
 		{
-			GenerateGradleApp
-			BuildGradleApp
+			$GenDir = "$PSScriptRoot\gradleSource"
+			Delete-Tree $GenDir
+			GenerateGradleApp $GenDir 'com.crapola'
+			BuildGradleApp $GenDir
+		}
+
+		'create'
+		{
+			if ((!$TargetDir) -or (!$Package))
+			{
+				"Syntax: create <RootDir> <PackageName>"
+				return
+			}
+
+			GenerateGradleApp $TargetDir $Package
+			BuildGradleApp $TargetDir
 		}
 
 		'cmd'
@@ -78,14 +92,17 @@ function Main
 
 		default
 		{
-			'Syntax: build|gradle|gen|cmd|jshell|clean|nuke
+			'Syntax: build|gradle|gen|cmd|jshell|clean|nuke|create
   build : compile basic java test project
   gradle: compile and run gradle test project
   gen   : generate prototype gradle app
-  cmd   : oprn gradle command prompt
+  cmd   : open gradle command prompt
   jshell: run jshell
   clean : remove all temp files
   nuke  : remove jdk\gradle generated directories
+
+  create <RootDir> <PackageName> 
+    : create external prototype gradle app
 '
 		}
 	}
@@ -105,6 +122,8 @@ function Build
 
 function GenerateGradleApp
 {
+	param ([string] $GradleAppDir, $PackageName)
+
 	GetJdk
 	GetGradle
 
@@ -113,14 +132,10 @@ function GenerateGradleApp
 	#gradle --stop
 	#gradle help --task :init
 
+	# add parms
 	$RootProjectName='RootProject'
 	$AppName='app'
-	$AppPackageName='com.crapola'
 	$LibName='lib'
-	$LibPackageName='com.crapola'
-
-	$GradleAppDir="$PSScriptRoot\gradleSource"
-	Delete-Tree $GradleAppDir
 
 	md $GradleAppDir -Force | Out-Null
 	pushd $GradleAppDir
@@ -128,27 +143,28 @@ function GenerateGradleApp
 
 	md $AppName -Force | Out-Null
 	pushd $AppName
-	gradle init --type java-application --dsl groovy --test-framework junit --project-name $AppName --package $AppPackageName
+	gradle init --type java-application --dsl groovy --test-framework junit --project-name $AppName --package $PackageName
 	popd
 
 	md $LibName -Force | Out-Null
 	pushd $LibName
-	gradle init --type java-library --dsl groovy --test-framework junit --project-name $LibName --package $LibPackageName
+	gradle init --type java-library --dsl groovy --test-framework junit --project-name $LibName --package $PackageName
 	popd
 
 	pushd "$PSScriptRoot\groovySource"
 	gradle run --args="'$GradleAppDir'"
 	popd
 
-	gradle --stop
+	#gradle --stop
 }
 
 function BuildGradleApp
 {
+	param ([string] $GradleAppDir)
+
 	GetJdk
 	GetGradle
 	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
-	$GradleAppDir="$PSScriptRoot\gradleSource"
 	pushd $GradleAppDir
 	.\gradlew cleanTest test
 	popd
