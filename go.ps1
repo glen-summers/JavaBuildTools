@@ -61,13 +61,20 @@ function Main
 
 		'nuke'
 		{
-			if (Test-Path $GradleDir\gradle.bat)
+			$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
+			if (Test-Path $GradleDir\bin\gradle.bat)
 			{
-				& "$GradleDir\gradle.bat --stop"
+				Write-Host attempting to stopping gradle
+				& cmd.exe /c $GradleDir\bin\gradle.bat --stop
+			}
+			else
+			{
+				try { taskkill /IM java.exe /f 2>&1}
+				catch {}
 			}
 
-			Remove-Tree $JdkDir
 			Remove-Tree $GradleDir
+			Remove-Tree $JdkDir
 		}
 
 		default
