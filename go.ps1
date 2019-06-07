@@ -1,37 +1,12 @@
 param ([string] $Target, [string] $TargetDir='', [string] $Package='')
 $ErrorActionPreference = "Stop"
-$Temp="$PSScriptRoot\temp"
-$Downloads = "$temp\downloads"
-$DepDir='ExternalDependencies'
 
-$WGetVer='1.20.3'
-$WGetUrl="https://eternallybored.org/misc/wget/${WGetVer}/64/wget.exe"
-$WGet="$Downloads\wget.exe"
-
-$NugetVer='v4.9.4'
-$NugetUrl="https://dist.nuget.org/win-x86-commandline/${NugetVer}/nuget.exe"
-$Nuget="$Downloads\nuget.exe"
-
-$SevenZipVer='18.1.0'
-$SevenZip="$Downloads\7-Zip.CommandLine.${SevenZipVer}\tools\x64\7za.exe"
-
-$JdkVer='12.0.1'
-$JdkFlavour='windows-x64'
-$JdkStem="jdk-${JdkVer}"
-$JdkZip="$Downloads\${JdkStem}_${JdkFlavour}.bin.zip"
-$JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+12/69cfe15208a647278a19ef0990eea691/${JdkStem}_${JdkFlavour}_bin.zip"
-
-$GradleVer='5.4.1'
-$GradleStem="gradle-${GradleVer}"
-$GradleUrl="https://services.gradle.org/distributions/${GradleStem}-bin.zip"
-$GradleZip="$Downloads\${GradleStem}-bin.zip"
+import-module $PSScriptRoot\utils.psm1 #-verbose
 
 function Main
 {
 	cls
-	$Above = Get-DirectoryAbove $PSScriptRoot $DepDir $Temp
-	$JdkDir = Join-Path $Above $JdkStem
-	$GradleDir = Join-Path $Above $GradleStem
+	#Get-Verb
 
 	Switch ($Target)
 	{
@@ -48,7 +23,7 @@ function Main
 		'gen'
 		{
 			$GenDir = "$PSScriptRoot\gradleSource"
-			Delete-Tree $GenDir
+			Remove-Tree $GenDir
 			GenerateGradleApp $GenDir 'com.crapola'
 			BuildGradleApp $GenDir
 		}
@@ -67,8 +42,8 @@ function Main
 
 		'cmd'
 		{
-			GetJdk
-			GetGradle
+			Install-Jdk
+			Install-Gradle
 			$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
 			cmd /k PROMPT [$`p] GO`$g
 		}
@@ -80,14 +55,19 @@ function Main
 
 		'clean'
 		{
-			Delete-Tree $Temp
+			Remove-Tree $Temp
 			git clean -fdx
 		}
 
 		'nuke'
 		{
-			Delete-Tree $JdkDir
-			Delete-Tree $GradleDir
+			if (Test-Path $GradleDir\gradle.bat)
+			{
+				& "$GradleDir\gradle.bat --stop"
+			}
+
+			Remove-Tree $JdkDir
+			Remove-Tree $GradleDir
 		}
 
 		default
@@ -112,7 +92,7 @@ function Main
 
 function Build
 {
-	GetJdk
+	Install-Jdk
 	$Env:Path="$JdkDir\bin;$Env:Path"
 	pushd javaSource
 	javac HelloWorld.java
@@ -124,8 +104,8 @@ function GenerateGradleApp
 {
 	param ([string] $GradleAppDir, $PackageName)
 
-	GetJdk
-	GetGradle
+	Install-Jdk
+	Install-Gradle
 
 	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
 	#gradle --status
@@ -162,9 +142,10 @@ function BuildGradleApp
 {
 	param ([string] $GradleAppDir)
 
-	GetJdk
-	GetGradle
+	Install-Jdk
+	Install-Gradle
 	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
+
 	pushd $GradleAppDir
 	.\gradlew cleanTest test
 	popd
@@ -172,147 +153,9 @@ function BuildGradleApp
 
 function JShell
 {
-	GetJdk
+	Install-Jdk
 	$Env:Path="$JdkDir\bin;$Env:Path"
 	JShell.exe
-}
-
-###########################################################################
-
-function GetJdk
-{
-	if (! (Test-Path $JdkDir))
-	{
-		md $Downloads -Force | Out-Null
-		Download-File $NugetUrl $Nuget
-		Download-Nuget $SevenZip $SevenZipVer
-
-		Download-File $WGetUrl $WGet
-		Download-File-WGet $JdkUrl $JdkZip 'oraclelicense=accept-securebackup-cookie'
-		ExtractZip $JdkZip $Temp\$JdkStem
-		move $Temp\$JdkStem\$JdkStem $JdkDir
-		rm $Temp\$JdkStem
-	}
-	echo "Jdk   : $JdkDir"
-}
-
-function GetGradle
-{
-	if (! (Test-Path $GradleDir))
-	{
-		md $Downloads -Force | Out-Null
-		Download-File $NugetUrl $Nuget
-		Download-Nuget $SevenZip $SevenZipVer
-
-		Download-File $WGetUrl $WGet
-		Download-File-WGet $GradleUrl $GradleZip
-
-		ExtractZip $GradleZip $Temp\$GradleStem
-		move $Temp\$GradleStem\$GradleStem $GradleDir
-		rm $Temp\$GradleStem
-	}
-	echo "Gradle: $GradleDir"
-}
-
-function Get-DirectoryAbove
-{
-	param ([string] $Start, [string] $Signature, [string] $Fallback)
-
-	for ($dir = $Start; $dir; $dir = Split-Path -Path $dir -Parent)
-	{
-		$combined = Join-Path $dir $Signature
-		if (Test-Path $combined)
-		{
-			$combined
-			return
-		}
-	}
-	$Fallback
-}
-
-function Download-File
-{
-	[CmdletBinding()]
-	param ([string]$Url, [string]$Target)
-
-	if ( -Not (Test-Path $Target ))
-	{
-		Write-Host "downloading $Url -> $Target"
-		(New-Object System.Net.WebClient).DownloadFile($Url, $Target)
-		if ( -Not (Test-Path $Target ))
-		{
-			throw 'Download failed'
-		}
-	}
-}
-
-function Download-File-WGet
-{
-	[CmdletBinding()]
-	param ([string]$Url, [string]$Target, [string]$Cookie)
-
-	if ( -Not (Test-Path $Target ))
-	{
-		Write-Host "downloading $Url -> $Target"
-		& $WGet --no-check-certificate -c -c --header "Cookie: $Cookie" $Url -O $Target
-	}
-}
-
-function Download-Nuget
-{
-	param ([string]$Name, [string]$Version)
-	if ( -Not (Test-Path $Name))
-	{
-		Write-Host "downloading nuget $Name"
-		& $Nuget install 7-Zip.CommandLine -version "$Version" -OutputDirectory "$Downloads" -PackageSaveMode nuspec
-	}
-}
-
-function ExtractTarGz
-{
-	param ([string]$Archive, [string]$OutDir)
-	if ( -Not (Test-Path $OutDir))
-	{
-		Write-Host "Extracting $Archive -> $OutDir"
-		(& cmd /c $SevenZip x $Archive -so `| $SevenZip x -aoa -si -ttar -o"$OutDir") 2>&1 | Out-Null
-	}
-}
-
-function ExtractZip
-{
-	param ([string]$Archive, [string]$OutDir)
-	if ( -Not (Test-Path $OutDir))
-	{
-		Write-Host "Extracting $Archive -> $OutDir"
-		(& $SevenZip x -o"$OutDir" $Archive ) 2>&1 | Out-Null
-	}
-}
-
-function Delete-Tree
-{
-	param ([string]$Dir)
-
-	if (-not (Test-Path $Dir))
-	{
-		return
-	}
-
-	Write-Host "deleting $Dir..."
-	$tries = 10
-	while ((Test-Path $Dir) -and ($tries-ge 0)) 
-	{
-		Try 
-		{
-			rm -r -fo $Dir
-			return
-		}
-		Catch 
-		{
-		}
-		Start-Sleep -seconds 1
-		--$tries
-	}
-	Write-Host "failed to delete"
 }
 
 ###########################################################################
