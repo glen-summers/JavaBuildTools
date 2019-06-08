@@ -55,7 +55,7 @@ function Main
 
 		'clean'
 		{
-			Remove-Tree $Temp
+			# gradle clean?
 			git clean -fdx
 		}
 

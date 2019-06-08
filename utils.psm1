@@ -1,9 +1,28 @@
 $ErrorActionPreference = "Stop"
 
-$Temp="$PSScriptRoot\temp"
-$Downloads = "$temp\downloads"
-$DepDir='ExternalDependencies'
+function Get-DirectoryAbove
+{
+	param ([string] $Start, [string] $Signature, [string] $Fallback)
 
+	for ($dir = $Start; $dir; $dir = Split-Path -Path $dir -Parent)
+	{
+		$combined = Join-Path $dir $Signature
+		if (Test-Path $combined)
+		{
+			$combined
+			return
+		}
+	}
+	$Fallback
+}
+
+$DepsSignature='ExternalDependencies'
+$Deps = Get-DirectoryAbove $PSScriptRoot $DepsSignature (Get-Item $PSScriptRoot).parent.FullName
+
+# downloads in Deps dir primarily for testing with multiple projects without re-downloading, change to remove after install
+$Downloads="$Deps\_downloads"
+
+# move versions\urls\etc to text separate file? ####################################
 $WGetVer='1.20.3'
 $WGetUrl="https://eternallybored.org/misc/wget/${WGetVer}/64/wget.exe"
 $WGet="$Downloads\wget.exe"
@@ -20,11 +39,16 @@ $JdkFlavour='windows-x64'
 $JdkStem="jdk-${JdkVer}"
 $JdkZip="$Downloads\${JdkStem}_${JdkFlavour}.bin.zip"
 $JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+12/69cfe15208a647278a19ef0990eea691/${JdkStem}_${JdkFlavour}_bin.zip"
+$JdkCookie='oraclelicense=accept-securebackup-cookie'
 
 $GradleVer='5.4.1'
 $GradleStem="gradle-${GradleVer}"
 $GradleUrl="https://services.gradle.org/distributions/${GradleStem}-bin.zip"
 $GradleZip="$Downloads\${GradleStem}-bin.zip"
+# move versions\urls\etc to text seperate file? ####################################
+
+$JdkDir="$Deps\$JdkStem"
+$GradleDir="$Deps\$GradleStem"
 
 function Install-Jdk
 {
@@ -35,11 +59,8 @@ function Install-Jdk
 		Download-Nuget $SevenZip $SevenZipVer
 
 		Download-File $WGetUrl $WGet
-		Download-File-WGet $JdkUrl $JdkZip 'oraclelicense=accept-securebackup-cookie'
-		ExtractZip $JdkZip $Temp\$JdkStem
-		echo move $Temp\$JdkStem\$JdkStem $JdkDir
-		move $Temp\$JdkStem\$JdkStem $JdkDir
-		rm $Temp\$JdkStem
+		Download-File-WGet $JdkUrl $JdkZip $JdkCookie
+		ExtractZip $JdkZip $Deps
 	}
 	echo "Jdk   : $JdkDir"
 }
@@ -54,29 +75,9 @@ function Install-Gradle
 
 		Download-File $WGetUrl $WGet
 		Download-File-WGet $GradleUrl $GradleZip
-
-		ExtractZip $GradleZip $Temp\$GradleStem
-		echo move $Temp\$GradleStem\$GradleStem $GradleDir
-		move $Temp\$GradleStem\$GradleStem $GradleDir
-		rm $Temp\$GradleStem
+		ExtractZip $GradleZip $Deps
 	}
 	echo "Gradle: $GradleDir"
-}
-
-function Get-DirectoryAbove
-{
-	param ([string] $Start, [string] $Signature, [string] $Fallback)
-
-	for ($dir = $Start; $dir; $dir = Split-Path -Path $dir -Parent)
-	{
-		$combined = Join-Path $dir $Signature
-		if (Test-Path $combined)
-		{
-			$combined
-			return
-		}
-	}
-	$Fallback
 }
 
 function Download-File
@@ -130,11 +131,8 @@ function ExtractTarGz
 function ExtractZip
 {
 	param ([string]$Archive, [string]$OutDir)
-	if ( -Not (Test-Path $OutDir))
-	{
-		Write-Host "Extracting $Archive -> $OutDir"
-		(& $SevenZip x -o"$OutDir" $Archive ) 2>&1 | Out-Null
-	}
+	Write-Host "Extracting $Archive -> $OutDir"
+	(& $SevenZip x -o"$OutDir" $Archive ) 2>&1 | Out-Null
 }
 
 function Remove-Tree
@@ -164,11 +162,8 @@ function Remove-Tree
 	Write-Host "failed to remove"
 }
 
-$Above = Get-DirectoryAbove $PSScriptRoot $DepDir $Temp
-$JdkDir = Join-Path $Above $JdkStem
-$GradleDir = Join-Path $Above $GradleStem
+# add nuke? to remove Jdk\Gradle\downloads here?
 
-Export-ModuleMember -Variable Temp
 Export-ModuleMember -Variable JdkDir
 Export-ModuleMember -Variable GradleDir
 
