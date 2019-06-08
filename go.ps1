@@ -35,9 +35,28 @@ function Main
 				"Syntax: create <RootDir> <PackageName>"
 				return
 			}
+			
+			if (Test-Path $TargetDir)
+			{
+				"Error: $TargetDir already exists"
+				return;
+			}
 
 			GenerateGradleApp $TargetDir $Package
-			BuildGradleApp $TargetDir
+			Copy-Item -path $PSScriptRoot\go.cmd -Destination $TargetDir
+			Copy-Item -path $PSScriptRoot\go-gen.ps1 -Destination $TargetDir\go.ps1
+			Copy-Item -path $PSScriptRoot\utils.psm1 -Destination $TargetDir
+
+			pushd $TargetDir
+			git init
+			git add .
+			git commit -m "Initial commit"
+			popd
+
+			#BuildGradleApp $TargetDir
+			& $TargetDir\go.cmd test
+
+			git status -s
 		}
 
 		'cmd'
