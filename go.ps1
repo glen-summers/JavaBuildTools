@@ -41,15 +41,19 @@ function Main
 				return;
 			}
 
-			GenerateGradleApp $TargetDir $Package
+			$RootProjectDir = "$TargetDir\project"
+			md $RootProjectDir -Force | Out-Null
+			GenerateGradleApp $RootProjectDir $Package
+
+			Get-ChildItem -Path $PSScriptRoot\boilerplate | Copy-Item -Destination $TargetDir -Recurse -Container -force
+
 			pushd $TargetDir
-			Copy-Item -path $PSScriptRoot\boilerplate\*.* -r
 			git init
 			git add .
 			git commit -m "Initial commit"
 			popd
 
-			BuildGradleApp $TargetDir
+			BuildGradleApp $RootProjectDir
 
 			#& $TargetDir\go.cmd test
 			# git --git-dir=$TargetDir\.git --work-tree=$TargetDir status -s
