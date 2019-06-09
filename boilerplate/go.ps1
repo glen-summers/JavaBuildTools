@@ -9,7 +9,9 @@ function Main
 	Install-Jdk
 	Install-Gradle
 	$Env:Path="$JdkDir\bin;$GradleDir\bin;$Env:Path"
-	& $PSScriptRoot\gradlew.bat $parms
+	pushd $PSScriptRoot\project
+	& .\gradlew.bat $parms
+	popd
 }
 
 Main $args
