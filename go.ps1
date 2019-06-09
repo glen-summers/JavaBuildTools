@@ -1,12 +1,11 @@
 param ([string] $Target, [string] $TargetDir='', [string] $Package='')
 $ErrorActionPreference = "Stop"
 
-import-module $PSScriptRoot\utils.psm1 #-verbose
+import-module $PSScriptRoot\boilerplate\utils.psm1
 
 function Main
 {
 	cls
-	#Get-Verb
 
 	Switch ($Target)
 	{
@@ -43,18 +42,15 @@ function Main
 			}
 
 			GenerateGradleApp $TargetDir $Package
-			Copy-Item -path $PSScriptRoot\go.cmd -Destination $TargetDir
-			Copy-Item -path $PSScriptRoot\go-gen.ps1 -Destination $TargetDir\go.ps1 # move to boilerplate
-			Copy-Item -path $PSScriptRoot\utils.psm1 -Destination $TargetDir
-			Copy-Item -path $PSScriptRoot\boilerplate\*.* -r -Destination $TargetDir
-
 			pushd $TargetDir
+			Copy-Item -path $PSScriptRoot\boilerplate\*.* -r
 			git init
 			git add .
 			git commit -m "Initial commit"
 			popd
 
 			BuildGradleApp $TargetDir
+
 			#& $TargetDir\go.cmd test
 			# git --git-dir=$TargetDir\.git --work-tree=$TargetDir status -s
 		}
