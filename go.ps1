@@ -35,7 +35,7 @@ function Main
 				"Syntax: create <RootDir> <PackageName>"
 				return
 			}
-			
+
 			if (Test-Path $TargetDir)
 			{
 				"Error: $TargetDir already exists"
@@ -44,8 +44,9 @@ function Main
 
 			GenerateGradleApp $TargetDir $Package
 			Copy-Item -path $PSScriptRoot\go.cmd -Destination $TargetDir
-			Copy-Item -path $PSScriptRoot\go-gen.ps1 -Destination $TargetDir\go.ps1
+			Copy-Item -path $PSScriptRoot\go-gen.ps1 -Destination $TargetDir\go.ps1 # move to boilerplate
 			Copy-Item -path $PSScriptRoot\utils.psm1 -Destination $TargetDir
+			Copy-Item -path $PSScriptRoot\boilerplate\*.* -r -Destination $TargetDir
 
 			pushd $TargetDir
 			git init
@@ -53,10 +54,9 @@ function Main
 			git commit -m "Initial commit"
 			popd
 
-			#BuildGradleApp $TargetDir
-			& $TargetDir\go.cmd test
-
-			git status -s
+			BuildGradleApp $TargetDir
+			#& $TargetDir\go.cmd test
+			# git --git-dir=$TargetDir\.git --work-tree=$TargetDir status -s
 		}
 
 		'cmd'
@@ -150,11 +150,19 @@ function GenerateGradleApp
 	md $AppName -Force | Out-Null
 	pushd $AppName
 	gradle init --type java-application --dsl groovy --test-framework junit --project-name $AppName --package $PackageName
+	Remove-Item gradle -r
+	Remove-Item .gitignore
+	Remove-Item gradlew
+	Remove-Item gradlew.bat
 	popd
 
 	md $LibName -Force | Out-Null
 	pushd $LibName
 	gradle init --type java-library --dsl groovy --test-framework junit --project-name $LibName --package $PackageName
+	Remove-Item gradle -r
+	Remove-Item .gitignore
+	Remove-Item gradlew
+	Remove-Item gradlew.bat
 	popd
 
 	pushd "$PSScriptRoot\groovySource"
