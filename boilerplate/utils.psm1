@@ -34,11 +34,13 @@ $Nuget="$Downloads\nuget.exe"
 $SevenZipVer='18.1.0'
 $SevenZip="$Downloads\7-Zip.CommandLine.${SevenZipVer}\tools\x64\7za.exe"
 
-$JdkVer='12.0.1'
+$JdkVer='13.0.2'
+$JdkSubVer='8'
+$JdkHash='d4173c853231432d94f001e99d882ca7'
 $JdkFlavour='windows-x64'
 $JdkStem="jdk-${JdkVer}"
 $JdkZip="$Downloads\${JdkStem}_${JdkFlavour}.bin.zip"
-$JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+12/69cfe15208a647278a19ef0990eea691/${JdkStem}_${JdkFlavour}_bin.zip"
+$JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+${JdkSubVer}/${JdkHash}/${JdkStem}_${JdkFlavour}_bin.zip"
 $JdkCookie='oraclelicense=accept-securebackup-cookie'
 
 $GradleVer='5.4.1'
