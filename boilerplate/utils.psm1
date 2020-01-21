@@ -43,7 +43,7 @@ $JdkZip="$Downloads\${JdkStem}_${JdkFlavour}.bin.zip"
 $JdkUrl="https://download.oracle.com/otn-pub/java/jdk/${JdkVer}+${JdkSubVer}/${JdkHash}/${JdkStem}_${JdkFlavour}_bin.zip"
 $JdkCookie='oraclelicense=accept-securebackup-cookie'
 
-$GradleVer='5.4.1'
+$GradleVer='6.1'
 $GradleStem="gradle-${GradleVer}"
 $GradleUrl="https://services.gradle.org/distributions/${GradleStem}-bin.zip"
 $GradleZip="$Downloads\${GradleStem}-bin.zip"
